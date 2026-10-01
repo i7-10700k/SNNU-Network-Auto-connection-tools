@@ -1,0 +1,10 @@
+# 让仓库里的行尾在任何人机器上都一致
+*.bat  text eol=crlf
+*.vbs  text eol=crlf
+*.ps1  text eol=crlf
+*.md   text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+
+# 二进制/打包文件不要做行尾转换
+*.zip  binary

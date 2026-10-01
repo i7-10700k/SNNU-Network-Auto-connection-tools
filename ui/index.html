@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SNNU校园网自动连接工具</title>
+<style>
+  :root{
+    --bg:#050D0F;
+    --ink:#E7F2F0;
+    --muted:rgba(231,242,240,.62);
+    --faint:rgba(231,242,240,.38);
+    --line:rgba(255,255,255,.10);
+    --line-strong:rgba(255,255,255,.18);
+    --glass:rgba(255,255,255,.05);
+    --acc:#7DE3E0;
+    --emerald:#10B981;
+    --teal:#14B8A6;
+    --cyan:#22D3EE;
+    --danger:#F87171;
+    --warn:#FBBF24;
+    --sans:"Segoe UI","Microsoft YaHei UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    --mono:"Cascadia Mono","JetBrains Mono",Consolas,"SFMono-Regular",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  ::selection{background:var(--acc);color:#04191A}
+  .aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .aurora .tint{
+    position:absolute;inset:0;
+    background-image:
+      radial-gradient(60% 50% at 14% 8%, rgba(16,185,129,.18), transparent 60%),
+      radial-gradient(55% 45% at 86% 14%, rgba(34,211,238,.15), transparent 60%),
+      radial-gradient(75% 60% at 50% 104%, rgba(125,227,224,.13), transparent 66%);
+  }
+  .blob{position:absolute;border-radius:50%;filter:blur(130px);will-change:transform}
+  .b1{left:-16%;top:-14%;width:46vw;height:46vw;background:rgba(16,185,129,.20);animation:drift 17s ease-in-out infinite}
+  .b2{right:-14%;top:4%;width:42vw;height:42vw;background:rgba(34,211,238,.16);animation:drift 24s ease-in-out infinite}
+  .b3{left:30%;bottom:-20%;width:44vw;height:44vw;background:rgba(45,212,191,.14);animation:drift 20s ease-in-out infinite}
+  .aurora .vignette{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 0%, transparent 52%, rgba(2,7,8,.82) 100%)}
+  .aurora .noise{
+    position:absolute;inset:0;opacity:.06;mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  @keyframes drift{
+    0%,100%{transform:translate(0,0) scale(1);opacity:.75}
+    50%{transform:translate(4%,-3%) scale(1.1);opacity:1}
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.blob{animation:none}.rise{animation:none!important;opacity:1!important}}
+  .wrap{position:relative;z-index:10;max-width:1080px;margin:0 auto;padding:26px 22px 70px}
+  .rise{opacity:0;animation:rise .85s cubic-bezier(.22,1,.36,1) forwards}
+  .d1{animation-delay:.05s}
+  .d2{animation-delay:.14s}
+  .d3{animation-delay:.23s}
+  .d4{animation-delay:.32s}
+  .nav{
+    display:flex;align-items:center;gap:12px;
+    padding:10px 12px 10px 14px;border-radius:999px;
+    background:var(--glass);border:1px solid var(--line);
+    backdrop-filter:blur(20px) saturate(140%);
+    -webkit-backdrop-filter:blur(20px) saturate(140%);
+  }
+  .dot{
+    width:9px;height:9px;border-radius:50%;background:var(--acc);
+    box-shadow:0 0 12px 2px rgba(125,227,224,.6);animation:pulse 2.4s ease-in-out infinite;flex:none;
+  }
+  .nav .brand{font-size:14px;font-weight:600;letter-spacing:.02em}
+  .nav .tag{
+    margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:5px 11px;background:rgba(255,255,255,.03);
+  }
+  .hero{margin:52px 0 34px}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--acc);margin:0 0 16px;
+  }
+  h1{margin:0;font-size:clamp(32px,5.6vw,54px);line-height:1.14;font-weight:700;letter-spacing:-.015em}
+  h1 .grad{
+    background:linear-gradient(100deg,var(--emerald),var(--teal) 45%,var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .lead{margin:18px 0 0;max-width:60ch;color:var(--muted);font-size:15px;line-height:1.75}
+  .glass{
+    background:var(--glass);border:1px solid var(--line);border-radius:24px;
+    backdrop-filter:blur(26px) saturate(150%);
+    -webkit-backdrop-filter:blur(26px) saturate(150%);
+    box-shadow:0 24px 60px -30px rgba(0,0,0,.9);
+  }
+  .grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+  .card{padding:26px 26px 24px}
+  .card h2{
+    margin:0 0 22px;font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);font-family:var(--mono);
+  }
+  .field{margin-bottom:20px}
+  label.cap{
+    display:block;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:9px;
+  }
+  .inp{
+    width:100%;padding:13px 15px;font-size:15px;font-family:var(--sans);color:var(--ink);
+    background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;outline:none;
+    transition:border-color .25s,box-shadow .25s,background .25s;
+  }
+  .inp::placeholder{color:rgba(231,242,240,.28)}
+  .inp:focus{
+    border-color:rgba(125,227,224,.55);background:rgba(255,255,255,.06);
+    box-shadow:0 0 0 4px rgba(125,227,224,.10);
+  }
+  .pwwrap{position:relative}
+  .pwwrap .inp{padding-right:64px}
+  .eyebtn{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    border:1px solid transparent;background:transparent;color:var(--faint);
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:6px 9px;border-radius:9px;cursor:pointer;
+    transition:color .2s,background .2s;
+  }
+  .eyebtn:hover{color:var(--acc);background:rgba(255,255,255,.06)}
+  .pills{display:flex;flex-wrap:wrap;gap:9px}
+  .pill{position:relative;cursor:pointer}
+  .pill input{position:absolute;opacity:0;pointer-events:none}
+  .pill span{
+    display:flex;align-items:center;gap:8px;padding:11px 17px;border-radius:999px;
+    border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);
+    font-size:14px;transition:all .25s cubic-bezier(.22,1,.36,1);white-space:nowrap;
+  }
+  .pill span:hover{border-color:var(--line-strong);color:var(--ink);transform:translateY(-1px)}
+  .pill input:checked + span{
+    border-color:transparent;color:#04191A;font-weight:600;
+    background:linear-gradient(100deg,var(--emerald),var(--teal) 50%,var(--cyan));
+    box-shadow:0 10px 26px -12px rgba(34,211,238,.75);
+  }
+  .pill input:focus-visible + span{box-shadow:0 0 0 4px rgba(125,227,224,.18)}
+  .hint{margin:10px 0 0;font-size:12.5px;color:var(--faint);line-height:1.6}
+  .check{display:flex;align-items:flex-start;gap:11px;margin:4px 0 22px;cursor:pointer;user-select:none}
+  .check input{
+    appearance:none;-webkit-appearance:none;width:19px;height:19px;margin:1px 0 0;flex:none;
+    border:1px solid var(--line-strong);border-radius:6px;background:rgba(255,255,255,.04);
+    cursor:pointer;transition:all .2s;position:relative;
+  }
+  .check input:checked{background:linear-gradient(100deg,var(--emerald),var(--cyan));border-color:transparent}
+  .check input:checked::after{
+    content:"";position:absolute;left:6px;top:2.5px;width:5px;height:10px;
+    border:solid #04191A;border-width:0 2px 2px 0;transform:rotate(45deg);
+  }
+  .check span{font-size:13.5px;color:var(--muted);line-height:1.6}
+  .btns{display:flex;flex-wrap:wrap;gap:11px}
+  button.act{
+    font-family:var(--sans);font-size:14.5px;font-weight:600;cursor:pointer;
+    padding:13px 24px;border-radius:999px;border:1px solid transparent;
+    transition:all .25s cubic-bezier(.22,1,.36,1);
+  }
+  button.act:disabled{opacity:.5;cursor:not-allowed}
+  button.primary{color:#04191A;background:linear-gradient(100deg,var(--emerald),var(--teal) 50%,var(--cyan));box-shadow:0 14px 32px -16px rgba(34,211,238,.8)}
+  button.primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 20px 40px -16px rgba(34,211,238,.9)}
+  button.ghost{color:var(--ink);background:rgba(255,255,255,.045);border-color:var(--line)}
+  button.ghost:hover:not(:disabled){background:rgba(255,255,255,.09);border-color:var(--line-strong);transform:translateY(-2px)}
+  button.ghost.danger{color:#FCA5A5}
+  button.ghost.danger:hover:not(:disabled){background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.5);color:#FECACA}
+  .rows{display:flex;flex-direction:column;gap:2px}
+  .row{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid rgba(255,255,255,.055)}
+  .row:last-child{border-bottom:none}
+  .row .k{font-size:13.5px;color:var(--faint);flex:none;min-width:86px}
+  .row .v{margin-left:auto;font-size:13.5px;text-align:right;word-break:break-all}
+  .stat{display:inline-flex;align-items:center;gap:7px}
+  .stat i{width:7px;height:7px;border-radius:50%;background:var(--faint);flex:none}
+  .ok i{background:#34D399;box-shadow:0 0 10px 1px rgba(52,211,153,.55)}
+  .warn i{background:var(--warn);box-shadow:0 0 10px 1px rgba(251,191,36,.5)}
+  .bad i{background:var(--danger);box-shadow:0 0 10px 1px rgba(248,113,113,.5)}
+  .mono{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  .sep{height:1px;background:rgba(255,255,255,.07);margin:16px 0}
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translate(-50%,26px);z-index:50;
+    max-width:min(92vw,560px);padding:14px 20px;border-radius:16px;font-size:14px;line-height:1.6;
+    background:rgba(8,20,22,.86);border:1px solid var(--line-strong);
+    backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    box-shadow:0 22px 50px -24px rgba(0,0,0,.95);
+    opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.22,1,.36,1);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.ok{border-color:rgba(52,211,153,.5)}
+  .toast.err{border-color:rgba(248,113,113,.5)}
+  .toast.busy{border-color:rgba(125,227,224,.45)}
+  .spin{
+    display:inline-block;width:11px;height:11px;border:2px solid rgba(125,227,224,.3);
+    border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;
+    vertical-align:-1px;margin-right:8px;
+  }
+  .credit{
+    position:fixed;right:20px;bottom:16px;z-index:20;pointer-events:none;
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    color:rgba(231,242,240,.30);text-shadow:0 1px 8px rgba(0,0,0,.75);
+    user-select:none;transition:color .4s;
+  }
+  @media (max-width:640px){.credit{right:12px;bottom:10px;font-size:10px;letter-spacing:.04em}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true">
+  <div class="tint"></div>
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="vignette"></div><div class="noise"></div>
+</div>
+<div class="wrap">
+  <div class="nav rise d1">
+    <span class="dot"></span>
+    <span class="brand">SNNU校园网自动连接工具</span>
+    <span class="tag">Portal</span>
+  </div>
+  <header class="hero rise d2">
+    <p class="eyebrow">Campus Network · Auto Login</p>
+    <h1>SNNU · 连上校园网<br><span class="grad">自动完成认证</span></h1>
+    <p class="lead">填一次即可实现后续全自动连接，取消后即可复原。</p>
+  </header>
+  <div class="grid">
+    <form class="glass card rise d3" id="form" autocomplete="off">
+      <h2>认证信息</h2>
+      <div class="field">
+        <label class="cap" for="account">账号 / 学号</label>
+        <input class="inp" id="account" name="account" type="text" placeholder="请输入学号" autocomplete="off" spellcheck="false">
+        <p class="hint" id="accHint">首次使用请填写学号。</p>
+      </div>
+      <div class="field">
+        <label class="cap" for="password">密码</label>
+        <div class="pwwrap">
+          <input class="inp" id="password" name="password" type="password" placeholder="请输入校园网密码" autocomplete="new-password">
+          <button class="eyebtn" type="button" id="togglePw">显示</button>
+        </div>
+        <p class="hint" id="pwHint">密码只保存在你自己的电脑上，并且是加密存放的。</p>
+      </div>
+      <div class="field">
+        <label class="cap">代拨方式</label>
+        <div class="pills" id="pills">
+          <label class="pill"><input type="radio" name="service" value="campus"><span>校园网</span></label>
+          <label class="pill"><input type="radio" name="service" value="mobile"><span>移动</span></label>
+          <label class="pill"><input type="radio" name="service" value="unicom"><span>联通</span></label>
+          <label class="pill"><input type="radio" name="service" value="telecom"><span>电信</span></label>
+        </div>
+        <p class="hint">按你平时手动登录时选的那一项即可。</p>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="autostart">
+        <span>开机自动运行（登录 Windows 后在后台启动，掉线自动重连）</span>
+      </label>
+      <div class="btns">
+        <button class="act primary" type="submit" id="btnSave">保存并启动</button>
+        <button class="act ghost" type="button" id="btnTest">立即测试认证状态</button>
+        <button class="act ghost danger" type="button" id="btnStop">取消自动认证</button>
+      </div>
+    </form>
+    <aside class="glass card rise d4">
+      <h2>当前状态</h2>
+      <div class="rows">
+        <div class="row"><span class="k">登录账号</span><span class="v mono" id="stAcc">—</span></div>
+        <div class="row"><span class="k">认证状态</span><span class="v stat" id="stPortal"><i></i>读取中…</span></div>
+        <div class="row"><span class="k">外网连通</span><span class="v stat" id="stNet"><i></i>读取中…</span></div>
+        <div class="row"><span class="k">守护进程</span><span class="v stat" id="stDaemon"><i></i>读取中…</span></div>
+        <div class="row"><span class="k">开机自启</span><span class="v stat" id="stAuto"><i></i>读取中…</span></div>
+        <div class="row"><span class="k">认证地址</span><span class="v mono" id="stUrl">—</span></div>
+      </div>
+      <div class="sep"></div>
+      <div class="btns">
+        <button class="act ghost" type="button" id="btnRefresh">刷新状态</button>
+        <button class="act ghost" type="button" id="btnQuit">完成并关闭</button>
+      </div>
+      <p class="hint mono" id="logPath" style="margin-top:16px"></p>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="credit" aria-hidden="true">design by Han.</div>
+<script>
+var TOKEN = "__TOKEN__";
+var CONFIGURED = false;
+function $(id) { return document.getElementById(id); }
+
+function toast(msg, kind) {
+  var t = $('toast');
+  t.className = 'toast show ' + (kind || '');
+  t.innerHTML = (kind === 'busy' ? '<span class="spin"></span>' : '') + msg;
+  if (kind !== 'busy') {
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.className = 'toast'; }, 5200);
+  }
+}
+
+function api(path, data) {
+  return fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+    body: JSON.stringify(data || {})
+  }).then(function (r) { return r.json(); });
+}
+
+function setStat(el, kind, text) {
+  el.className = 'v stat ' + kind;
+  el.innerHTML = '<i></i>' + text;
+}
+
+function currentService() {
+  var r = document.querySelector('input[name="service"]:checked');
+  return r ? r.value : 'mobile';
+}
+
+function render(s) {
+  // 出于隐私考虑：不回填、不显示账号原文，只显示掩码
+  CONFIGURED = !!s.configured;
+  $('stAcc').textContent = s.accountMasked || (CONFIGURED ? '已保存' : '未配置');
+  if (CONFIGURED) {
+    $('accHint').textContent = '已保存账号 ' + (s.accountMasked || '') + '，留空表示不修改；要换账号直接输入新的学号。';
+    $('account').placeholder = '输入新学号（留空则沿用已保存账号）';
+  } else {
+    $('accHint').textContent = '首次使用请填写学号。';
+  }
+  var radios = document.querySelectorAll('input[name="service"]');
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].checked = (radios[i].value === s.service);
+  }
+  if (s.hasPassword) {
+    $('password').placeholder = '已保存密码，留空表示不修改';
+    $('pwHint').textContent = '密码已加密保存。要更换密码，直接在这里输入新密码即可。';
+  }
+  if (s.portal === 'online') { setStat($('stPortal'), 'ok', '已认证（在线）'); }
+  else if (s.portal === 'offline') { setStat($('stPortal'), 'warn', '未认证（离线）'); }
+  else { setStat($('stPortal'), 'bad', '无法确认'); }
+  setStat($('stNet'), s.internet ? 'ok' : 'bad', s.internet ? '正常' : '不通');
+  setStat($('stDaemon'), s.daemonRunning ? 'ok' : 'warn', s.daemonRunning ? '运行中' : '未运行');
+  var auto = s.autostart || '未注册';
+  setStat($('stAuto'), auto === '未注册' ? 'warn' : 'ok', auto);
+  $('stUrl').textContent = s.portalUrl || '—';
+  $('logPath').textContent = '日志：' + (s.logPath || '');
+  $('autostart').checked = (auto !== '未注册');
+}
+
+function load() {
+  api('/api/state').then(render).catch(function () {
+    toast('无法连接本地配置服务，请关掉页面后重新双击 "1.点我开始运行，不要点其他文件！.bat"。', 'err');
+  });
+}
+
+function busy(btn, on, text) {
+  btn.disabled = on;
+  if (on) { btn.dataset.old = btn.textContent; btn.textContent = text || '处理中…'; }
+  else if (btn.dataset.old) { btn.textContent = btn.dataset.old; }
+}
+
+$('togglePw').onclick = function () {
+  var p = $('password');
+  var show = (p.type === 'password');
+  p.type = show ? 'text' : 'password';
+  this.textContent = show ? '隐藏' : '显示';
+};
+
+$('form').onsubmit = function (e) {
+  e.preventDefault();
+  var acc = $('account').value.trim();
+  if (!acc && !CONFIGURED) { toast('请先填写账号 / 学号。', 'err'); return; }
+  busy($('btnSave'), true, '保存中…');
+  toast('正在保存配置并启动后台守护…', 'busy');
+  api('/api/save', {
+    account: acc,
+    password: $('password').value,
+    service: currentService(),
+    installAutostart: $('autostart').checked
+  }).then(function (r) {
+    busy($('btnSave'), false);
+    toast(r.message, r.ok ? 'ok' : 'err');
+    $('account').value = '';
+    $('password').value = '';
+    load();
+  }).catch(function () {
+    busy($('btnSave'), false);
+    toast('保存失败：本地服务无响应。', 'err');
+  });
+};
+
+$('btnTest').onclick = function () {
+  busy($('btnTest'), true, '测试中…');
+  toast('正在用当前填写的信息测试认证状态…', 'busy');
+  api('/api/test', {
+    account: $('account').value.trim(),
+    password: $('password').value,
+    service: currentService()
+  }).then(function (r) {
+    busy($('btnTest'), false);
+    toast(r.message, r.ok ? 'ok' : 'err');
+    load();
+  }).catch(function () {
+    busy($('btnTest'), false);
+    toast('测试失败：本地服务无响应。', 'err');
+  });
+};
+
+$('btnStop').onclick = function () {
+  busy($('btnStop'), true, '停止中…');
+  toast('正在取消自动认证：停止守护进程、取消开机自启并断开当前登录…', 'busy');
+  api('/api/stopall').then(function (r) {
+    busy($('btnStop'), false);
+    toast(r.message, r.ok ? 'ok' : 'err');
+    load();
+  }).catch(function () {
+    busy($('btnStop'), false);
+    toast('操作失败：本地服务无响应。', 'err');
+  });
+};
+
+$('btnRefresh').onclick = function () { toast('正在刷新状态…', 'busy'); load(); };
+
+$('btnQuit').onclick = function () {
+  api('/api/quit').then(function () {
+    toast('配置界面已关闭，现在可以关掉这个页面了。', 'ok');
+  }).catch(function () { toast('配置界面已关闭。', 'ok'); });
+};
+
+load();
+</script>
+</body>
+</html>
